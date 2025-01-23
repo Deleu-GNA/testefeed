@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Login</title>
+  <style>
+    /* Reset básico */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Corpo da página */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      position: relative;
+      text-align: center; /* Centraliza o conteúdo do corpo */
+    }
+
+    /* Container principal */
+    .container {
+      width: 100%;
+      max-width: 800px; /* Largura máxima do container */
+      margin: 0 20px;
+      padding: 20px;
+      position: relative; /* Permite o posicionamento dos painéis sobrepostos */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Estilo para os painéis */
+    .admin-container, .colaborador-container, .feedback-container, #cadastro-usuario, #inserir-feedback, #visualizar-feedback {
+      display: none;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 750px; /* Largura máxima ajustada */
+      max-height: 80vh;
+      overflow-y: auto;
+      position: absolute; /* Para que fiquem sobrepostos */
+      top: 50%; /* Centraliza verticalmente */
+      left: 50%; /* Centraliza horizontalmente */
+      transform: translate(-50%, -50%); /* Ajusta para garantir que fiquem bem centralizados */
+      z-index: 10; /* Garante que fiquem acima de outros elementos */
+    }
+
+    /* Títulos */
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    /* Estilo dos botões */
+    .option {
+      display: inline-block;
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+
+    .option:hover {
+      background-color: #0056b3;
+    }
+
+    /* Botões no painel de login */
+    #login-screen input, #login-screen button {
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    #login-screen button {
+      background-color: #007BFF;
+      color: white;
+    }
+
+    #login-screen button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Ajuste do painel de cadastro de usuário */
+    #cadastro-usuario {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 750px;
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: left;
+    }
+
+    #cadastro-usuario label {
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: left;
+      width: 100%;
+    }
+
+    #cadastro-usuario select,
+    #cadastro-usuario input,
+    #cadastro-usuario textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px; /* Espaçamento entre os campos */
+    }
+
+    #cadastro-usuario button {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      margin-top: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #cadastro-usuario button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Ajuste do painel de inserir feedback */
+    #inserir-feedback {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 750px;
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: left;
+    }
+
+    #inserir-feedback label {
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: left;
+      width: 100%;
+    }
+
+    #inserir-feedback select,
+    #inserir-feedback input,
+    #inserir-feedback textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px; /* Espaçamento entre os campos */
+    }
+
+    #inserir-feedback button {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      margin-top: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #inserir-feedback button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Ajuste do painel de visualizar feedback */
+    #visualizar-feedback {
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Centraliza o conteúdo dentro do painel */
+      justify-content: flex-start; /* Alinha o conteúdo ao topo dentro do painel */
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 750px;
+      height: auto;
+      max-height: 80vh;
+      overflow-y: auto; /* Permite rolagem */
+      text-align: left;
+      position: absolute; /* Para garantir que ele fique sobre outros elementos */
+      top: 50%; /* Centraliza verticalmente */
+      left: 50%; /* Centraliza horizontalmente */
+      transform: translate(-50%, -50%); /* Ajusta para garantir o centralizado perfeito */
+      z-index: 10; /* Garante que fique acima de outros elementos */
+    }
+
+    /* Estilo do cabeçalho de feedback */
+    #visualizar-feedback h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    /* Ajuste dos campos acima da tabela */
+    #visualizar-feedback .filter-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    /* Estilo para o filtro de supervisor */
+    #visualizar-feedback .filter-section select,
+    #visualizar-feedback .filter-section button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    /* Estilo para o título da seção de feedback */
+    #visualizar-feedback .filter-section h3 {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    /* Ajuste da tabela de feedback */
+    #feedbackTable {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      background-color: white; /* Cor de fundo da tabela */
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    }
+
+    #feedbackTable th, #feedbackTable td {
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #ccc;
+      border-radius: 5px; /* Borda arredondada nas células */
+    }
+
+    #feedbackTable th {
+      background-color: #f8f8f8;
+      font-weight: bold;
+    }
+
+    #feedbackTable td {
+      background-color: #fff;
+    }
+
+    /* Container da tabela com rolagem interna */
+    #feedbackTableContainer {
+      width: 100%;
+      max-height: 400px;
+      overflow-y: auto; /* Permite rolagem */
+      padding: 10px;
+      margin-top: 20px;
+      border-radius: 10px; /* Borda arredondada do container da tabela */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+    <!-- Tela de Login -->
+    <div id="login-screen">
+      <h1>Login</h1>
+      <input type="email" id="email" placeholder="Digite seu email" />
+      <input type="password" id="senha" placeholder="Digite sua senha" />
+      <button onclick="fazerLogin()">Login</button>
+      <p id="error-message" class="error-message"></p>
+      
+      <div class="forgot-password">
+        <a href="#" onclick="esqueciMinhaSenha()">Esqueci minha senha</a>
+      </div>
+    </div>
+
+    <!-- Tela de Administrador -->
+    <div id="admin-screen" class="admin-container">
+      <h1>Bem-vindo ao Painel de Administrador</h1>
+
+      <!-- Exibição do nome e email do usuário logado -->
+      <div id="userEmail">Usuário Logado: <span id="userName">Carregando...</span> - <span id="userEmailText">Carregando...</span></div>
+
+      <div class="option" onclick="cadastrarUsuario()">Cadastrar Usuário</div>
+      <div class="option" onclick="inserirFeedback()">Inserir Feedback</div>
+      <div class="option" onclick="mostrarFeedbacks()">Visualizar Feedback</div>
+      <div class="option" onclick="window.open('https://script.google.com/macros/s/AKfycbxvQl_-L1M1rASXptVAAzvaMoyA9OGvE7SIK8qfQ7g/dev', '_top')">Sair do sistema</div>     
+    </div>
+
+    <!-- Tela de Colaborador -->
+    <div id="colaborador-screen" class="colaborador-container">
+      <h1>Bem-vindo ao Painel de Colaborador</h1>
+
+      <div id="userInfo">
+        <h2>Informações do Colaborador</h2>
+        <p>Nome: <span id="colaboradorNome">Carregando...</span></p>
+        <p>Email: <span id="colaboradorEmail">Carregando...</span></p>
+      </div>
+
+      <div class="option" onclick="concluirFeedback()">Concluir Feedback</div>
+      <div class="option" onclick="extratoFeedbackcolab()">Extrato de Feedback</div>
+      <div class="option" onclick="window.open('https://script.google.com/macros/s/AKfycbxvQl_-L1M1rASXptVAAzvaMoyA9OGvE7SIK8qfQ7g/dev', '_top')">Sair do sistema</div>     
+    </div>
+  </div>
+
+  <!-- Painel de Cadastrar Usuário -->
+  <div id="cadastro-usuario" class="admin-container" style="display: none;">
+    <h1>Cadastrar Novo Usuário</h1>
+    <label for="cad_nome">Nome:</label>
+    <input type="text" id="cad_nome" placeholder="Digite o nome" required>
+    <label for="cad_email">Email:</label>
+    <input type="email" id="cad_email" placeholder="Digite o email" required>
+    <label for="cad_senha">Senha:</label>
+    <input type="password" id="cad_senha" placeholder="Digite a senha" required>
+    <label for="cad_tipoUsuario">Tipo de Usuário:</label>
+    <select id="cad_tipoUsuario" required>
+      <option value="colaborador">Colaborador</option>
+      <option value="adm">ADM</option>
+    </select>
+    <button onclick="enviarCadastro()">Enviar</button>
+    <button onclick="voltarAoPainel()">Voltar</button>
+    <p id="error-message" class="error-message"></p>
+  </div>
+
+  <!-- Painel de Inserir Feedback (ADM) -->
+  <div id="inserir-feedback" class="admin-container" style="display: none;">
+    <h1>Inserir Feedback</h1>
+    
+    <!-- Nome do colaborador -->
+    <label for="colaborador_feed">Nome do Colaborador:</label>
+    <select id="colaborador_feed" required>
+      <!-- Os nomes dos colaboradores serão inseridos aqui via Google Script -->
+    </select>
+    
+    <!-- Assunto do Feedback -->
+    <label for="assunto_feed">Assunto do Feedback:</label>
+    <select id="assunto_feed" required>
+      <option value="Indicador">Indicador</option>
+      <option value="Postural">Postural</option>
+      <option value="Monitoria">Monitoria</option>
+    </select>
+    
+    <!-- Texto do Feedback -->
+    <label for="texto_feed">Texto do Feedback:</label>
+    <textarea id="texto_feed" rows="5" required></textarea>
+
+    <!-- Botão para Inserir Feedback -->
+    <button onclick="inserirFeedback3()">Cadastrar Feedback</button>
+    <button onclick="voltarAoPainel2()">Voltar</button>
+
+    <p id="error-message" class="error-message"></p>
+  </div>
+
+  <!-- Tela de Feedbacks -->
+  <div id="feedbacks-screen" class="admin-container" style="display: none;">
+    <h2>Feedbacks dos Colaboradores</h2>
+    <br>
+    <!-- Botão para voltar ao painel administrativo -->
+    <button onclick="voltarAoPainelAdm4()">Voltar ao Painel Administrativo</button>
+    <br><br>
+    <!-- Filtros -->
+    <div class="filters">
+      <label for="columnFilter">Filtrar por:</label>
+      <select id="columnFilter">
+        <option value="0">Protocolo</option>
+        <option value="1">Data</option>
+        <option value="2">Supervisor</option>
+        <option value="3">Nome do Colaborador</option>
+        <option value="4">Concorda com Feedback?</option>
+      </select>
+
+      <input type="text" id="filterValue" onkeyup="filtrarTabela()" placeholder="Digite para filtrar...">
+    </div>
+    <br>
+    <table id="feedbackTable">
+      <thead>
+        <tr>
+          <th>Protocolo</th>
+          <th>Data</th>
+          <th>Supervisor</th>
+          <th>Nome do Colaborador</th>
+          <th>Concorda com Feedback?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Dados da tabela serão preenchidos via JavaScript -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Função para voltar ao painel administrativo
+    function voltarAoPainelAdm4() {
+      document.getElementById('feedbacks-screen').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'block'; // Supondo que o painel administrativo tenha id "admin-screen"
+    }
+
+    // Função para buscar e exibir feedbacks na interface
+    function mostrarFeedbacks() {
+      google.script.run
+        .withSuccessHandler(exibirFeedbacks)
+        .withFailureHandler((error) => console.error('Erro ao buscar feedbacks:', error))
+        .buscarFeedbacksDaPlanilha();
+
+      // Exibir a tela de feedbacks
+      document.getElementById('admin-screen').style.display = 'none';
+      document.getElementById('feedbacks-screen').style.display = 'block';
+    }
+
+    function exibirFeedbacks(feedbacks) {
+      console.log(feedbacks); // Verifique a estrutura dos dados
+      const feedbacksTableBody = document.querySelector('#feedbackTable tbody');
+
+      // Verifica se a tabela existe
+      if (!feedbacksTableBody) {
+        console.error("Elemento <tbody> de 'feedbackTable' não encontrado.");
+        return;
+      }
+
+      // Limpar dados anteriores
+      feedbacksTableBody.innerHTML = '';
+
+      // Adicionar feedbacks na tabela
+      feedbacks.forEach(feedback => {
+        const row = feedbacksTableBody.insertRow();
+        
+        // Formatar data para o padrão pt-BR
+        const data = new Date(feedback.dataexi); // Cria o objeto Date a partir do formato ISO
+        const dataFormatada = data.toLocaleDateString('pt-BR'); // Formata para dd/MM/yyyy
+        
+        // Inserir células na linha
+        row.insertCell(0).textContent = feedback.protocoloexi;
+        row.insertCell(1).textContent = dataFormatada;
+        row.insertCell(2).textContent = feedback.supervisorexi;
+        row.insertCell(3).textContent = feedback.colaboradorexi;
+        row.insertCell(4).textContent = feedback.concordaexi;
+      });
+    }
+
+    // Função para filtrar a tabela por uma coluna específica
+    function filtrarTabela() {
+      const colunaIndex = document.getElementById('columnFilter').value; // Índice da coluna
+      const filtro = document.getElementById('filterValue').value.toLowerCase(); // Valor do filtro
+      const linhas = document.querySelectorAll('#feedbackTable tbody tr'); // Todas as linhas da tabela
+
+      linhas.forEach(linha => {
+        const coluna = linha.cells[colunaIndex].textContent.trim().toLowerCase(); // Texto da célula
+        linha.style.display = coluna.includes(filtro) ? '' : 'none'; // Mostra ou oculta a linha
+      });
+    }
+
+    // Carregar os colaboradores quando o painel de feedback for carregado
+    window.onload = function() {
+      google.script.run.withSuccessHandler(preencherColaboradores).carregarColaboradores();
+    };
+
+    // Função para preencher a lista de colaboradores no select
+    function preencherColaboradores(colaboradores) {
+      var select = document.getElementById('colaborador_feed');
+      
+      // Limpa o campo antes de adicionar os novos colaboradores
+      select.innerHTML = '';
+      
+      // Adiciona a primeira opção "Selecione"
+      var option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'Selecione o Colaborador';
+      select.appendChild(option);
+      
+      // Adiciona as opções de colaboradores
+      colaboradores.forEach(function(colaborador) {
+        var option = document.createElement('option');
+        option.value = colaborador;
+        option.textContent = colaborador;
+        select.appendChild(option);
+      });
+    }
+
+    // Função para obter os dados do usuário logado e exibir na interface
+ // Função para obter os dados do usuário logado e exibir na interface
+function carregarUsuarioLogado() {
+  google.script.run.withSuccessHandler(exibirUsuarioLogado).getUsuarioLogado();
+}
+
+// Função para exibir os dados do usuário logado
+function exibirUsuarioLogado(usuario) {
+  if (usuario) {
+    console.log("Usuário logado:", usuario); // Log para verificar os dados do usuário
+    document.getElementById('userName').textContent = usuario.nome;
+    document.getElementById('userEmailText').textContent = usuario.email;
+    
+    // Exibir informações do colaborador
+    document.getElementById('colaboradorNome').textContent = usuario.nome;
+    document.getElementById('colaboradorEmail').textContent = usuario.email;
+  } else {
+    console.error("Usuário não encontrado.");
+  }
+}
+
+function fazerLogin() {
+  const email = document.getElementById('email').value.trim();
+  const senha = document.getElementById('senha').value.trim();
+
+  if (!email || !senha) {
+    document.getElementById('error-message').innerText = 'Por favor, preencha todos os campos.';
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(resposta) {
+      if (resposta.sucesso) {
+        var categoria = resposta.categoria;
+        var nome = resposta.nome;
+        var email = resposta.email; // Recebe o email para ser usado
+
+        // Chama a função para definir o usuário logado na planilha
+        google.script.run.setUsuarioLogado(nome, email);
+
+        // Atualiza o nome e o e-mail do usuário na interface
+        document.getElementById('userName').innerText = nome;
+        document.getElementById('userEmailText').innerText = email;
+
+        // Exibe as telas adequadas
+        document.getElementById('login-screen').style.display = 'none';
+        if (categoria === 'adm') {
+          document.getElementById('admin-screen').style.display = 'block';
+        } else if (categoria === 'colaborador') {
+          document.getElementById('colaborador-screen').style.display = 'block';
+          carregarUsuarioLogado(); // Chama a função para carregar os dados do colaborador
+        }
+      } else {
+        document.getElementById('error-message').innerText = resposta.mensagem;
+      }
+    })
+    .validarLogin(email, senha);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function cadastrarUsuario() {
+      document.getElementById('admin-screen').style.display = 'none';
+      document.getElementById('cadastro-usuario').style.display = 'block';
+    }
+
+    function voltarAoPainel() {
+      document.getElementById('cadastro-usuario').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'block';
+    }
+
+    function enviarCadastro() {
+      const nome = document.getElementById('cad_nome').value.trim();
+      const email = document.getElementById('cad_email').value.trim();
+      const senha = document.getElementById('cad_senha').value.trim();
+      const tipoUsuario = document.getElementById('cad_tipoUsuario').value;
+
+      // Validação do nome
+      if (!nome) {
+        alert('Por favor, insira um nome válido.');
+        return;
+      }
+
+      // Validação do email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        alert('Por favor, insira um email válido.');
+        return;
+      }
+
+      // Validação da senha
+      const senhaRegex = /^(?=.*[a-zA-Z]{2})(?=.*\d{6})[a-zA-Z\d]{8,}$/;
+      if (!senhaRegex.test(senha)) {
+        alert('A senha deve conter no mínimo 2 letras e 6 números.');
+        return;
+      }
+
+      // Validação do tipo de usuário
+      if (!tipoUsuario) {
+        alert('Por favor, selecione um tipo de usuário.');
+        return;
+      }
+
+      // Caso todas as validações sejam aprovadas, enviar os dados
+      google.script.run
+        .withSuccessHandler(() => {
+          alert('Usuário cadastrado com sucesso!');
+          voltarAoPainel();
+        })
+        .withFailureHandler((error) => {
+          console.error('Erro ao cadastrar usuário:', error);
+          alert('Ocorreu um erro ao cadastrar o usuário. Tente novamente.');
+        })
+        .cadastrarNovoUsuario(nome, email, senha, tipoUsuario);
+      // Limpa os campos de cadastro
+      limparCamposCadastro1();
+    }
+
+    // Função para exibir o painel de Inserir Feedback
+    function inserirFeedback() {
+      document.getElementById('admin-screen').style.display = 'none';
+      document.getElementById('inserir-feedback').style.display = 'block';
+    }
+
+    // Função para voltar ao painel ADM
+    function voltarAoPainel2() {
+      document.getElementById('inserir-feedback').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'block';
+    }
+
+    function limparCamposCadastro1() {
+      document.getElementById('cad_nome').value = '';  
+      document.getElementById('cad_email').value = '';  
+      document.getElementById('cad_senha').value = '';  
+      document.getElementById('cad_tipoUsuario').value = '';  
+    }
+
+    // Função para inserir feedback
+    function inserirFeedback3() {
+      var nomeColaborador = document.getElementById("colaborador_feed").value;
+      var assuntoFeed = document.getElementById("assunto_feed").value;
+      var textoFeed = document.getElementById("texto_feed").value;
+
+      // Obtém o nome e o email do ADM logado da interface HTML
+      var nomeAdm = document.getElementById("userName").innerText;
+      var emailAdm = document.getElementById("userEmailText").innerText;
+
+      var dados = {
+        nomeColaborador: nomeColaborador,
+        assuntoFeed: assuntoFeed,
+        textoFeed: textoFeed,
+        nomeAdm: nomeAdm,
+        emailAdm: emailAdm
+      };
+
+      // Envia os dados para a função do Google Apps Script
+      google.script.run.withSuccessHandler(function() {
+        alert("Feedback cadastrado com sucesso!");
+      }).inserirFeedback2(dados);
+
+      // Limpa os campos após o cadastro
+      limparCamposCadastro();
+    }
+
+    // Função para limpar os campos do formulário
+    function limparCamposCadastro() {
+      document.getElementById('colaborador_feed').value = ''; 
+      document.getElementById('assunto_feed').value = ''; 
+      document.getElementById('texto_feed').value = ''; 
+    }
+
+    // Função para carregar o extrato de feedbacks
+    function carregarExtratoFeedback() {
+      google.script.run.withSuccessHandler(function(feedbacks) {
+        const tabela = document.getElementById("feedbacksTable");
+        tabela.innerHTML = ''; // Limpar tabela antes de adicionar novos dados
+        feedbacks.forEach(function(feedback) {
+          const linha = tabela.insertRow();
+          linha.insertCell(0).innerHTML = feedback.protocolo;
+          linha.insertCell(1).innerHTML = feedback.dataLancamento;
+          linha.insertCell(2).innerHTML = feedback.supervisor;
+          linha.insertCell(3).innerHTML = feedback.status;
+        });
+      }).extratoFeedbackcolab();
+    }
+
+    // Painel de concluir Feedback colaborador
+// Função para abrir o painel de extrato de feedback
+function extratoFeedbackcolab() {
+  document.getElementById('colaborador-screen').style.display = 'none'; // Esconde o painel do colaborador
+  document.getElementById('extratofeedcolab-screen').style.display = 'block'; // Mostra o painel de extrato de feedback
+
+  // Carregar feedbacks do colaborador logado
+  google.script.run.withSuccessHandler(exibirFeedbacksExtrato).extratoFeedbackcolab();
+}
+
+// Função para exibir os feedbacks no painel de extrato
+function exibirFeedbacksExtrato(feedbacks) {
+  const tabela = document.getElementById("feedbacksTable");
+  tabela.innerHTML = ''; // Limpar tabela antes de adicionar novos dados
+
+  feedbacks.forEach(function(feedback) {
+    const linha = tabela.insertRow();
+    linha.insertCell(0).innerHTML = feedback.protocolo; // Protocolo
+    linha.insertCell(1).innerHTML = feedback.dataLancamento; // Data de Lançamento
+    linha.insertCell(2).innerHTML = feedback.supervisor; // Supervisor
+    linha.insertCell(3).innerHTML = feedback.status; // Status
+  });
+}
+
+    // Função para voltar ao painel colab
+    function voltarAoPainel8() {
+      document.getElementById('extratofeedcolab-screen').style.display = 'none';
+      document.getElementById('colaborador-screen').style.display = 'block';
+    }
+
+    // Painel de concluir Feedback colaborador
+    function concluirFeedback() {
+      document.getElementById('colaborador-screen').style.display = 'none';
+      document.getElementById('concluirfeed-screen').style.display = 'block';
+    }
+
+    // Função para voltar ao painel ADM
+    function voltarAoPainel7() {
+      document.getElementById('concluirfeed-screen').style.display = 'none';
+      document.getElementById('colaborador-screen').style.display = 'block';
+    }
+
+    // Função para buscar o feedback e exibir o painel de conclusão
+function buscarFeedbackcolab() {
+  const protocolo = document.getElementById("protocolo").value;
+  console.log("Buscando feedback para o protocolo:", protocolo); // Log do protocolo
+  google.script.run.withSuccessHandler(function(response) {
+    if (response.sucesso) {
+      document.getElementById("feedbackDetalhes").style.display = 'block';
+      document.getElementById("tituloProtocolo").innerHTML = "Protocolo: " + protocolo;
+      document.getElementById("dataLancamento").innerHTML = response.dataLancamento;
+      document.getElementById("supervisor").innerHTML = response.supervisor;
+      document.getElementById("textoFeedback").innerHTML = response.textoFeedback;
+    } else {
+      alert(response.mensagem);
+    }
+  }).concluirFeedback(protocolo, "", "");
+}
+
+// Função para abrir o painel de concluir feedback
+function concluirFeedback() {
+  document.getElementById('colaborador-screen').style.display = 'none'; // Esconde o painel do colaborador
+  document.getElementById('concluirfeed-screen').style.display = 'block'; // Mostra o painel de concluir feedback
+}
+
+  </script>
+
+  <!-- Painel de concluir Feedback colaborador -->
+<div id="concluirfeed-screen" class="admin-container" style="display: none;">
+  <h1>Conclusão de Feedback</h1>
+  <label for="protocolo">Protocolo:</label>
+  <input type="text" id="protocolo">
+  <button onclick="buscarFeedbackcolab()">Buscar</button>
+  <button onclick="voltarAoPainel7()">Voltar</button>
+
+  <div id="feedbackDetalhes" style="display:none;">
+    <h2 id="tituloProtocolo"></h2>
+    <p>Data de Lançamento: <span id="dataLancamento"></span></p>
+    <p>Supervisor: <span id="supervisor"></span></p>
+    <p>Texto do Feedback: <span id="textoFeedback"></span></p>
+    <p>Concorda com o feedback?</p>
+    <label><input type="radio" name="concorda" value="sim"> Sim</label>
+    <label><input type="radio" name="concorda" value="nao"> Não</label>
+    <br>
+    <label for="resposta">Resposta:</label>
+    <textarea id="resposta"></textarea>
+    <br>
+    <button onclick="concluirFeedback()">Concluir Feedback</button>
+  </div>
+</div>
+
+<!-- Painel de Extrato de Feedback -->
+<div id="extratofeedcolab-screen" class="admin-container" style="display: none;">
+  <h1>Extrato de Feedback</h1>
+  <br>
+  <button onclick="voltarAoPainel8()">Voltar</button> 
+  <button onclick="carregarExtratoFeedback()">Gerar extrato</button> 
+  <br><br>
+  <table id="feedbacksTable" border="1">
+    <tr>
+      <th>Protocolo</th>
+      <th>Data de Lançamento</th>
+      <th>Supervisor</th>
+      <th>Status</th>
+    </tr>
+  </table>
+</div>
+</body>
+</html>
