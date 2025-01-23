@@ -1,3 +1,15 @@
+// Variáveis globais para armazenar dados do ADM logado
+var usuarioLogadoAdm = {
+  nome: "", // Nome do ADM logado
+  email: "" // Email do ADM logado
+};
+
+// Variáveis globais para armazenar dados do Colaborador logado
+var usuarioLogadoColab = {
+  nome: "", // Nome do Colaborador logado
+  email: "" // Email do Colaborador logado
+};
+
 // Função do tipo GET que retorna a tela de login
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('index');
@@ -16,18 +28,16 @@ function validarLogin(email, senha) {
     const [nome, emailUsuario, senhaUsuario, categoria] = dados[i];
     if (emailUsuario === email && senhaUsuario === senha) {
       // Chama setUsuarioLogado para definir as variáveis globais corretamente
-if (categoria === 'adm') {
-  setUsuarioLogado(nome, email, 'adm');
-} else {
-  setUsuarioLogado(nome, email, 'colaborador');
-}
+      setUsuarioLogado(nome, email, categoria);
       Logger.log("Usuário logado: " + nome + ", Email: " + emailUsuario); // Log do usuário logado
       return { sucesso: true, categoria, nome, email: emailUsuario }; // Retorna o nome e email do usuário
     }
   }
 
+  // Se não encontrar, retorna mensagem de erro
+  return { sucesso: false, mensagem: 'Email ou senha inválidos.' };
+}
 
-// Função para definir o usuário logado
 // Função para definir o usuário logado
 function setUsuarioLogado(nome, email, tipo) {
   if (tipo === 'adm') {
@@ -40,25 +50,6 @@ function setUsuarioLogado(nome, email, tipo) {
     Logger.log('Colaborador logado: ' + nome + ', Email: ' + email);
   }
 }
-
-
-  // Se não encontrar, retorna mensagem de erro
-  return { sucesso: false, mensagem: 'Email ou senha inválidos.' };
-}
-
-// Variáveis globais para armazenar dados do ADM logado
-var usuarioLogadoAdm = {
-  nome: "", // Nome do ADM logado
-  email: "" // Email do ADM logado
-};
-
-// Variáveis globais para armazenar dados do Colaborador logado
-var usuarioLogadoColab = {
-  nome: "", // Nome do Colaborador logado
-  email: "" // Email do Colaborador logado
-};
-
-
 
 // Função para obter os dados do usuário logado
 function getUsuarioLogadoAdm() {
@@ -82,8 +73,6 @@ function carregarUsuarioLogadoColab() {
   return getUsuarioLogadoColab(); // Retorna as informações do colaborador logado
 }
 
-
-// Função para cadastrar um novo usuário
 // Função para cadastrar um novo usuário
 function cadastrarNovoUsuario(cad_nome, cad_email, cad_senha, cad_tipoUsuario) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -102,7 +91,6 @@ function cadastrarNovoUsuario(cad_nome, cad_email, cad_senha, cad_tipoUsuario) {
   return { sucesso: true, mensagem: 'Usuário cadastrado com sucesso!' };
 }
 
-// Função para carregar os colaboradores
 // Função para carregar os colaboradores
 function carregarColaboradores() {
   const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
@@ -134,14 +122,12 @@ function buscarNomeUsuario(email) {
 }
 
 // Função para inserir feedback
-// Função para inserir feedback
-// Função para inserir feedback
 function inserirFeedback2(dados) {
   const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
   const aba = planilha.getSheetByName('dados_feed');
   
   const dataAtual = new Date();
-  const protocolo = `${usuarioLogado.email.substring(0, 3).toUpperCase()}${dataAtual.getFullYear()}${(dataAtual.getMonth() + 1).toString().padStart(2, '0')}${dataAtual.getDate().toString().padStart(2, '0')}${dataAtual.getHours().toString().padStart(2, '0')}${dataAtual.getMinutes().toString().padStart(2, '0')}${dados.nomeColaborador.substring(0, 3).toUpperCase()}`;
+  const protocolo = `${usuarioLogadoColab.email.substring(0, 3).toUpperCase()}${dataAtual.getFullYear()}${(dataAtual.getMonth() + 1).toString().padStart(2, '0')}${dataAtual.getDate().toString().padStart(2, '0')}${dataAtual.getHours().toString().padStart(2, '0')}${dataAtual.getMinutes().toString().padStart(2, '0')}${dados.nomeColaborador.substring(0, 3).toUpperCase()}`;
 
   aba.appendRow([
     protocolo, 
@@ -149,8 +135,8 @@ function inserirFeedback2(dados) {
     dataAtual.getDate(), 
     dataAtual.getMonth() + 1, 
     dataAtual.getFullYear(), 
-    usuarioLogado.nome, 
-    usuarioLogado.email, 
+    usuarioLogadoColab.nome, 
+    usuarioLogadoColab.email, 
     dados.nomeColaborador, 
     "", // Email do colaborador (deve ser buscado)
     dados.assuntoFeed, 
@@ -161,7 +147,6 @@ function inserirFeedback2(dados) {
 }
 
 // Função para buscar os feedbacks e retorná-los ao frontend
-// Função para buscar feedbacks
 function buscarFeedbacksDaPlanilha() {
   const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
   const aba = planilha.getSheetByName('dados_feed');
@@ -169,7 +154,7 @@ function buscarFeedbacksDaPlanilha() {
   const feedbacks = [];
 
   for (let i = 1; i < dados.length; i++) {
-    if (dados[i][6] === usuarioLogado.email) { // Verifica se o feedback pertence ao colaborador logado
+    if (dados[i][6] === usuarioLogadoColab.email) { // Verifica se o feedback pertence ao colaborador logado
       feedbacks.push({
         protocolo: dados[i][0],
         data: dados[i][1],
@@ -184,7 +169,6 @@ function buscarFeedbacksDaPlanilha() {
 }
 
 // Função para exibir o extrato de feedbacks do colaborador logado
-// Função para extrato de feedback do colaborador
 function extratoFeedbackcolab() {
   const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
   const aba = planilha.getSheetByName('dados_feed');
@@ -192,7 +176,7 @@ function extratoFeedbackcolab() {
   const extrato = [];
 
   for (let i = 1; i < dados.length; i++) {
-    if (dados[i][6] === usuarioLogado.email) {
+    if (dados[i][6] === usuarioLogadoColab.email) {
       extrato.push({
         protocolo: dados[i][0],
         data: dados[i][1],
@@ -205,14 +189,13 @@ function extratoFeedbackcolab() {
 }
 
 // Função para concluir um feedback
-// Função para concluir feedback
 function concluirFeedback(protocolo) {
   const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
   const aba = planilha.getSheetByName('dados_feed');
   const dados = aba.getDataRange().getValues();
 
   for (let i = 1; i < dados.length; i++) {
-    if (dados[i][0] === protocolo && dados[i][6] === usuarioLogado.email) {
+    if (dados[i][0] === protocolo && dados[i][6] === usuarioLogadoColab.email) {
       dados[i][11] = 'Concluído'; // Atualiza o status para 'Concluído'
       aba.getRange(i + 1, 12).setValue('Concluído'); // Atualiza a planilha
       return { sucesso: true, mensagem: 'Feedback concluído com sucesso!' };
@@ -220,5 +203,3 @@ function concluirFeedback(protocolo) {
   }
   return { sucesso: false, mensagem: 'Feedback não encontrado ou não pertence ao colaborador.' };
 }
-
-
