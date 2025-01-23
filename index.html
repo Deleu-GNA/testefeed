@@ -539,10 +539,10 @@ function fazerLogin() {
       if (resposta.sucesso) {
         var categoria = resposta.categoria;
         var nome = resposta.nome;
-        var email = resposta.email; // Recebe o email para ser usado
+        var email = resposta.email;
 
         // Chama a função para definir o usuário logado na planilha
-        google.script.run.setUsuarioLogado(nome, email);
+        google.script.run.setUsuarioLogado(nome, email, categoria); // Passa a categoria
 
         // Atualiza o nome e o e-mail do usuário na interface
         document.getElementById('userName').innerText = nome;
@@ -562,12 +562,6 @@ function fazerLogin() {
     })
     .validarLogin(email, senha);
 }
-
-
-
-
-
-
 
 
 
@@ -768,6 +762,36 @@ function concluirFeedback() {
   document.getElementById('colaborador-screen').style.display = 'none'; // Esconde o painel do colaborador
   document.getElementById('concluirfeed-screen').style.display = 'block'; // Mostra o painel de concluir feedback
 }
+
+
+
+function mostrarPainel(painel) {
+  document.getElementById('login-panel').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('colab-panel').style.display = 'none';
+  document.getElementById(painel).style.display = 'block';
+
+  if (painel === 'admin-panel') {
+    google.script.run.withSuccessHandler(preencherColaboradores).buscarColaboradores();
+  }
+}
+
+
+
+function preencherColaboradores(colaboradores) {
+  const select = document.getElementById('colaborador_feed');
+  select.innerHTML = ''; // Limpa o campo antes de adicionar os novos colaboradores
+
+  colaboradores.forEach(function(colaborador) {
+    const option = document.createElement('option');
+    option.value = colaborador;
+    option.textContent = colaborador;
+    select.appendChild(option);
+  });
+}
+
+
+
 
   </script>
 
