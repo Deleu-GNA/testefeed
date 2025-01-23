@@ -16,15 +16,31 @@ function validarLogin(email, senha) {
     const [nome, emailUsuario, senhaUsuario, categoria] = dados[i];
     if (emailUsuario === email && senhaUsuario === senha) {
       // Chama setUsuarioLogado para definir as variáveis globais corretamente
-      if (categoria === 'adm') {
-        setUsuarioLogadoAdm(nome, emailUsuario);
-      } else {
-        setUsuarioLogadoColab(nome, emailUsuario);
-      }
+if (categoria === 'adm') {
+  setUsuarioLogado(nome, email, 'adm');
+} else {
+  setUsuarioLogado(nome, email, 'colaborador');
+}
       Logger.log("Usuário logado: " + nome + ", Email: " + emailUsuario); // Log do usuário logado
       return { sucesso: true, categoria, nome, email: emailUsuario }; // Retorna o nome e email do usuário
     }
   }
+
+
+// Função para definir o usuário logado
+// Função para definir o usuário logado
+function setUsuarioLogado(nome, email, tipo) {
+  if (tipo === 'adm') {
+    usuarioLogadoAdm.nome = nome;
+    usuarioLogadoAdm.email = email;
+    Logger.log('Usuário ADM logado: ' + nome + ', Email: ' + email);
+  } else {
+    usuarioLogadoColab.nome = nome;
+    usuarioLogadoColab.email = email;
+    Logger.log('Colaborador logado: ' + nome + ', Email: ' + email);
+  }
+}
+
 
   // Se não encontrar, retorna mensagem de erro
   return { sucesso: false, mensagem: 'Email ou senha inválidos.' };
@@ -42,23 +58,7 @@ var usuarioLogadoColab = {
   email: "" // Email do Colaborador logado
 };
 
-// Função para carregar dados do ADM logado
-function setUsuarioLogadoAdm(nome, email) {
-  usuarioLogadoAdm.nome = nome;
-  usuarioLogadoAdm.email = email;
 
-  // Registrar na planilha ou logar o processo (opcional)
-  Logger.log('Usuário ADM logado: ' + nome + ', Email: ' + email);
-}
-
-// Função para carregar dados do Colaborador logado
-function setUsuarioLogadoColab(nome, email) {
-  usuarioLogadoColab.nome = nome;
-  usuarioLogadoColab.email = email;
-
-  // Registrar na planilha ou logar o processo (opcional)
-  Logger.log('Colaborador logado: ' + nome + ', Email: ' + email);
-}
 
 // Função para obter os dados do usuário logado
 function getUsuarioLogadoAdm() {
@@ -84,31 +84,38 @@ function carregarUsuarioLogadoColab() {
 
 
 // Função para cadastrar um novo usuário
+// Função para cadastrar um novo usuário
 function cadastrarNovoUsuario(cad_nome, cad_email, cad_senha, cad_tipoUsuario) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const senhaRegex = /^(?=(?:[^a-zA-Z]*[a-zA-Z]){2})[^\s]{6,8}$/;
+
+  if (!emailRegex.test(cad_email)) {
+    return { sucesso: false, mensagem: 'Email inválido.' };
+  }
+  if (!senhaRegex.test(cad_senha)) {
+    return { sucesso: false, mensagem: 'A senha deve conter no mínimo 2 letras e ter entre 6 e 8 caracteres.' };
+  }
+
   const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
   const aba = planilha.getSheetByName('dados_usuarios');
-  
-  // Adiciona os dados do formulário à planilha
   aba.appendRow([cad_nome, cad_email, cad_senha, cad_tipoUsuario]);
+  return { sucesso: true, mensagem: 'Usuário cadastrado com sucesso!' };
 }
 
 // Função para carregar os colaboradores
+// Função para carregar os colaboradores
 function carregarColaboradores() {
-  var ss = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
-  var sheet = ss.getSheetByName('dados_usuarios');
-  var range = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4); // Colunas A a D (nomes e tipo)
-  var valores = range.getValues();
-  
-  // Filtra somente os nomes que possuem "colaborador" na coluna D
-  var colaboradoresFiltrados = valores
-    .filter(function(linha) {
-      return linha[3].toLowerCase() === 'colaborador'; // Verifica se a coluna D contém "colaborador"
-    })
-    .map(function(linha) {
-      return linha[0]; // Retorna apenas os nomes (coluna A)
-    });
+  const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
+  const aba = planilha.getSheetByName('dados_usuarios');
+  const dados = aba.getDataRange().getValues();
+  const colaboradores = [];
 
-  return colaboradoresFiltrados;
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][3] === 'colaborador') { // Verifica se é colaborador
+      colaboradores.push(dados[i][0]); // Adiciona o nome do colaborador
+    }
+  }
+  return colaboradores;
 }
 
 // Função para buscar o nome completo do usuário logado baseado no e-mail
@@ -127,161 +134,91 @@ function buscarNomeUsuario(email) {
 }
 
 // Função para inserir feedback
+// Função para inserir feedback
+// Função para inserir feedback
 function inserirFeedback2(dados) {
-  var ss = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
-  var sheetFeed = ss.getSheetByName('dados_feed');
-  var sheetUsuarios = ss.getSheetByName('dados_usuarios');
+  const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
+  const aba = planilha.getSheetByName('dados_feed');
+  
+  const dataAtual = new Date();
+  const protocolo = `${usuarioLogado.email.substring(0, 3).toUpperCase()}${dataAtual.getFullYear()}${(dataAtual.getMonth() + 1).toString().padStart(2, '0')}${dataAtual.getDate().toString().padStart(2, '0')}${dataAtual.getHours().toString().padStart(2, '0')}${dataAtual.getMinutes().toString().padStart(2, '0')}${dados.nomeColaborador.substring(0, 3).toUpperCase()}`;
 
-  var nomeColaborador = dados.nomeColaborador;
-  var assuntoFeed = dados.assuntoFeed;
-  var textoFeed = dados.textoFeed;
-  var nomeAdm = dados.nomeAdm || "Nome não encontrado";
-  var emailAdm = dados.emailAdm || "Email não encontrado";
-  var dataAtual = new Date();
-
-  // Gerar protocolo
-  var protocolo =
-    Utilities.formatDate(dataAtual, Session.getScriptTimeZone(), "yyyyMMddHHmmss") +
-    nomeAdm.substring(0, 3).toUpperCase() +
-    nomeColaborador.substring(0, 3).toUpperCase();
-
-  // Buscar e-mail do colaborador na guia "dados_usuarios"
-  var rangeUsuarios = sheetUsuarios.getRange(2, 1, sheetUsuarios.getLastRow() - 1, 2); // Colunas A (nome) e B (email)
-  var dadosUsuarios = rangeUsuarios.getValues();
-  var emailColaborador = dadosUsuarios.find(function(linha) {
-    return linha[0] === nomeColaborador; // Coluna A tem o nome
-  })?.[1] || "Email não encontrado"; // Coluna B tem o email
-
-  // Dados para a nova linha
-  var novaLinha = [
-    protocolo, // Coluna A
-    dataAtual, // Coluna B
-    dataAtual.getDate(), // Coluna C
-    dataAtual.getMonth() + 1, // Coluna D
-    dataAtual.getFullYear(), // Coluna E
-    nomeAdm, // Coluna F
-    emailAdm, // Coluna G
-    nomeColaborador, // Coluna H
-    emailColaborador, // Coluna I
-    assuntoFeed, // Coluna J
-    textoFeed, // Coluna K
-    "protocolo aberto ainda", // Coluna L
-    "protocolo aberto ainda", // Coluna M
-    "protocolo aberto ainda", // Coluna N
-    "protocolo aberto ainda", // Coluna O
-    "protocolo aberto ainda", // Coluna P
-    "protocolo aberto ainda" // Coluna Q
-  ];
-
-  // Adicionar a nova linha na planilha
-  sheetFeed.appendRow(novaLinha);
+  aba.appendRow([
+    protocolo, 
+    dataAtual, 
+    dataAtual.getDate(), 
+    dataAtual.getMonth() + 1, 
+    dataAtual.getFullYear(), 
+    usuarioLogado.nome, 
+    usuarioLogado.email, 
+    dados.nomeColaborador, 
+    "", // Email do colaborador (deve ser buscado)
+    dados.assuntoFeed, 
+    dados.textoFeed, 
+    "Pendente"
+  ]);
+  return { sucesso: true, mensagem: 'Feedback inserido com sucesso!' };
 }
 
 // Função para buscar os feedbacks e retorná-los ao frontend
+// Função para buscar feedbacks
 function buscarFeedbacksDaPlanilha() {
-  const planilhaID = '1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8';
-  const guiaNome = 'dados_feed';
+  const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
+  const aba = planilha.getSheetByName('dados_feed');
+  const dados = aba.getDataRange().getValues();
+  const feedbacks = [];
 
-  const planilha = SpreadsheetApp.openById(planilhaID);
-  const guia = planilha.getSheetByName(guiaNome);
-
-  const dados = guia.getDataRange().getValues();
-
-  const feedbacks = dados
-    .filter(linha => linha[0] && linha[2] && linha[3] && linha[4] && linha[5] && linha[7] && linha[11])
-    .map(linha => {
-      // Concatena Dia, Mês e Ano para o formato ISO (yyyy-MM-dd)
-      const dia = linha[2].toString().padStart(2, '0'); // Coluna C
-      const mes = linha[3].toString().padStart(2, '0'); // Coluna D
-      const ano = linha[4]; // Coluna E
-      const dataISO = `${ano}-${mes}-${dia}`; // Formato ISO
-
-      return {
-        protocoloexi: linha[0],        // Coluna A
-        dataexi: dataISO,              // Formato ISO para compatibilidade
-        supervisorexi: linha[5],       // Coluna F
-        colaboradorexi: linha[7],      // Coluna H
-        concordaexi: linha[11]         // Coluna L
-      };
-    });
-
-  Logger.log(feedbacks); // Verificar os dados no Apps Script
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][6] === usuarioLogado.email) { // Verifica se o feedback pertence ao colaborador logado
+      feedbacks.push({
+        protocolo: dados[i][0],
+        data: dados[i][1],
+        nome: dados[i][5],
+        assunto: dados[i][9],
+        texto: dados[i][10],
+        status: dados[i][11]
+      });
+    }
+  }
   return feedbacks;
 }
 
 // Função para exibir o extrato de feedbacks do colaborador logado
+// Função para extrato de feedback do colaborador
 function extratoFeedbackcolab() {
-  const email = usuarioLogado.email; // Email do colaborador logado
-  const nomeColaborador = buscarNomeUsuario(email); // Busca o nome do colaborador logado
-  const planilhaID = '1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8';
-  const guiaNome = 'dados_feed';
-  const planilha = SpreadsheetApp.openById(planilhaID);
-  const guia = planilha.getSheetByName(guiaNome);
+  const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
+  const aba = planilha.getSheetByName('dados_feed');
+  const dados = aba.getDataRange().getValues();
+  const extrato = [];
 
-  const dados = guia.getDataRange().getValues();
-
-  const feedbacks = dados
-    .filter(linha => linha[0] && linha[2] && linha[3] && linha[4] && linha[5] && linha[7] && linha[11] && linha[7] === nomeColaborador)
-    .map(linha => {
-      const dia = linha[2].toString().padStart(2, '0');
-      const mes = linha[3].toString().padStart(2, '0');
-      const ano = linha[4];
-      const dataISO = `${ano}-${mes}-${dia}`;
-
-      return {
-        protocolo: linha[0],        // Protocolo (Coluna A)
-        dataLancamento: dataISO,    // Data de Lançamento (Colunas C, D, E)
-        supervisor: linha[5],       // Supervisor Responsável (Coluna F)
-        status: linha[11]           // Status (Coluna L)
-      };
-    });
-
-  return feedbacks;
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][6] === usuarioLogado.email) {
+      extrato.push({
+        protocolo: dados[i][0],
+        data: dados[i][1],
+        assunto: dados[i][9],
+        status: dados[i][11]
+      });
+    }
+  }
+  return extrato;
 }
 
 // Função para concluir um feedback
-function concluirFeedback(protocolo, concorda, resposta) {
-  const planilhaID = '1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8';
-  const guiaNome = 'dados_feed';
-  const planilha = SpreadsheetApp.openById(planilhaID);
-  const guia = planilha.getSheetByName(guiaNome);
+// Função para concluir feedback
+function concluirFeedback(protocolo) {
+  const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
+  const aba = planilha.getSheetByName('dados_feed');
+  const dados = aba.getDataRange().getValues();
 
-  const dados = guia.getDataRange().getValues();
-  let feedback = null;
-
-  // Busca o feedback pelo protocolo
-  for (let i = 0; i < dados.length; i++) {
-    if (dados[i][0] === protocolo) {  // Coluna A
-      if (dados[i][7] !== usuarioLogado.nome) {
-        return { sucesso: false, mensagem: "Protocolo não pertence a você." }; // Verifica se o feedback é para o colaborador
-      }
-      if (dados[i][11] === "Sim" || dados[i][11] === "Não") {
-        return { sucesso: false, mensagem: "Esse feedback já foi concluído, visualize-o no extrato de feedback." }; // Verifica se já foi concluído
-      }
-      feedback = dados[i];
-      break;
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][0] === protocolo && dados[i][6] === usuarioLogado.email) {
+      dados[i][11] = 'Concluído'; // Atualiza o status para 'Concluído'
+      aba.getRange(i + 1, 12).setValue('Concluído'); // Atualiza a planilha
+      return { sucesso: true, mensagem: 'Feedback concluído com sucesso!' };
     }
   }
-
-  if (!feedback) {
-    return { sucesso: false, mensagem: "Protocolo não encontrado." };  // Caso o protocolo não seja encontrado
-  }
-
-  // Atualiza o feedback
-  const linhaFeedback = dados.findIndex(linha => linha[0] === protocolo);
-  const dataAtual = new Date();
-  const dataISO = Utilities.formatDate(dataAtual, Session.getScriptTimeZone(), "dd/MM/yyyy");
-  const dia = dataAtual.getDate();
-  const mes = dataAtual.getMonth() + 1;
-  const ano = dataAtual.getFullYear();
-
-  // Atualiza as colunas conforme o feedback
-  guia.getRange(linhaFeedback + 1, 12).setValue(concorda ? "Sim" : "Não"); // Coluna L: Status
-  guia.getRange(linhaFeedback + 1, 13).setValue(resposta);                  // Coluna M: Resposta
-  guia.getRange(linhaFeedback + 1, 14).setValue(dataISO);                  // Coluna N: Data de conclusão
-  guia.getRange(linhaFeedback + 1, 15).setValue(dia);                      // Coluna O: Dia
-  guia.getRange(linhaFeedback + 1, 16).setValue(mes);                      // Coluna P: Mês
-  guia.getRange(linhaFeedback + 1, 17).setValue(ano);                      // Coluna Q: Ano
-
-  return { sucesso: true, mensagem: "Feedback concluído com sucesso!" };
+  return { sucesso: false, mensagem: 'Feedback não encontrado ou não pertence ao colaborador.' };
 }
+
+
