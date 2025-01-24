@@ -127,7 +127,10 @@ function inserirFeedback2(dados) {
   const aba = planilha.getSheetByName('dados_feed');
   
   const dataAtual = new Date();
-  const protocolo = `${usuarioLogadoColab.email.substring(0, 3).toUpperCase()}${dataAtual.getFullYear()}${(dataAtual.getMonth() + 1).toString().padStart(2, '0')}${dataAtual.getDate().toString().padStart(2, '0')}${dataAtual.getHours().toString().padStart(2, '0')}${dataAtual.getMinutes().toString().padStart(2, '0')}${dados.nomeColaborador.substring(0, 3).toUpperCase()}`;
+  const protocolo = `${usuarioLogadoAdm.email.substring(0, 3).toUpperCase()}${dataAtual.getFullYear()}${(dataAtual.getMonth() + 1).toString().padStart(2, '0')}${dataAtual.getDate().toString().padStart(2, '0')}${dataAtual.getHours().toString().padStart(2, '0')}${dataAtual.getMinutes().toString().padStart(2, '0')}${dados.nomeColaborador.substring(0, 3).toUpperCase()}`;
+
+  // Aqui você deve buscar o email do colaborador com base no nome
+  const emailColaborador = buscarEmailColaborador(dados.nomeColaborador); // Função que você deve implementar
 
   aba.appendRow([
     protocolo, 
@@ -135,10 +138,10 @@ function inserirFeedback2(dados) {
     dataAtual.getDate(), 
     dataAtual.getMonth() + 1, 
     dataAtual.getFullYear(), 
-    usuarioLogadoColab.nome, 
-    usuarioLogadoColab.email, 
+    usuarioLogadoAdm.nome, // Use o nome do ADM
+    usuarioLogadoAdm.email, // Use o email do ADM
     dados.nomeColaborador, 
-    "", // Email do colaborador (deve ser buscado)
+    emailColaborador, // Email do colaborador buscado
     dados.assuntoFeed, 
     dados.textoFeed, 
     "Pendente"
@@ -146,28 +149,53 @@ function inserirFeedback2(dados) {
   return { sucesso: true, mensagem: 'Feedback inserido com sucesso!' };
 }
 
+// Função para buscar o email do colaborador com base no nome
+function buscarEmailColaborador(nomeColaborador) {
+  const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
+  const aba = planilha.getSheetByName('dados_usuarios'); // Supondo que os dados dos colaboradores estão aqui
+  const dados = aba.getDataRange().getValues();
+
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][0] === nomeColaborador) { // Supondo que o nome do colaborador está na primeira coluna
+      return dados[i][1]; // Supondo que o email do colaborador está na segunda coluna
+    }
+  }
+  return ""; // Retorna vazio se não encontrar
+}
+
 // Função para buscar os feedbacks e retorná-los ao frontend
+// Função para buscar todos os feedbacks e retorná-los ao frontend
 function buscarFeedbacksDaPlanilha() {
   const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
   const aba = planilha.getSheetByName('dados_feed');
   const dados = aba.getDataRange().getValues();
   const feedbacks = [];
 
+  Logger.log('Dados da planilha: ' + JSON.stringify(dados)); // Log dos dados lidos da planilha
+
   for (let i = 1; i < dados.length; i++) {
-    if (dados[i][6] === usuarioLogadoColab.email) { // Verifica se o feedback pertence ao colaborador logado
-      feedbacks.push({
-        protocolo: dados[i][0],
-        data: dados[i][1],
-        nome: dados[i][5],
-        assunto: dados[i][9],
-        texto: dados[i][10],
-        status: dados[i][11]
-      });
-    }
+    const dia = dados[i][2]; // Coluna C (dia)
+    const mes = dados[i][3]; // Coluna D (mês)
+    const ano = dados[i][4]; // Coluna E (ano)
+
+    // Cria um novo objeto Date
+    const data = new Date(ano, mes - 1, dia); // O mês é zero-indexado
+
+    feedbacks.push({
+      protocolo: dados[i][0],
+      data: data.toISOString(), // Armazena a data no formato ISO
+      nome: dados[i][5],
+      assunto: dados[i][9],
+      texto: dados[i][10],
+      status: dados[i][11]
+    });
   }
+
+  Logger.log('Feedbacks retornados: ' + JSON.stringify(feedbacks)); // Adicione este log
   return feedbacks;
 }
 
+// Função para exibir o extrato de feedbacks do colaborador logado
 // Função para exibir o extrato de feedbacks do colaborador logado
 function extratoFeedbackcolab() {
   const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
@@ -176,7 +204,7 @@ function extratoFeedbackcolab() {
   const extrato = [];
 
   for (let i = 1; i < dados.length; i++) {
-    if (dados[i][6] === usuarioLogadoColab.email) {
+    if (dados[i][6] === usuarioLogadoColab.email) { // Filtra apenas os feedbacks do colaborador logado
       extrato.push({
         protocolo: dados[i][0],
         data: dados[i][1],
