@@ -424,46 +424,48 @@
     }
 
     // Função para buscar e exibir feedbacks na interface
-    function mostrarFeedbacks() {
-      google.script.run
-        .withSuccessHandler(exibirFeedbacks)
-        .withFailureHandler((error) => console.error('Erro ao buscar feedbacks:', error))
-        .buscarFeedbacksDaPlanilha();
-
-      // Exibir a tela de feedbacks
-      document.getElementById('admin-screen').style.display = 'none';
-      document.getElementById('feedbacks-screen').style.display = 'block';
-    }
-
-    function exibirFeedbacks(feedbacks) {
-      console.log(feedbacks); // Verifique a estrutura dos dados
-      const feedbacksTableBody = document.querySelector('#feedbackTable tbody');
-
-      // Verifica se a tabela existe
-      if (!feedbacksTableBody) {
-        console.error("Elemento <tbody> de 'feedbackTable' não encontrado.");
-        return;
+    // Função para mostrar feedbacks
+function mostrarFeedbacks() {
+  google.script.run
+    .withSuccessHandler(function(feedbacks) {
+      if (feedbacks && Array.isArray(feedbacks)) { // Verifica se feedbacks é um array
+        exibirFeedbacks(feedbacks); // Chama a função para exibir os feedbacks
+      } else {
+        console.error('Nenhum feedback encontrado ou retorno inválido.');
+        // Aqui você pode adicionar lógica para exibir uma mensagem ao usuário
       }
+    })
+    .withFailureHandler((error) => console.error('Erro ao buscar feedbacks:', error))
+    .buscarFeedbacksDaPlanilha(); // Chama a função que busca os feedbacks
 
-      // Limpar dados anteriores
-      feedbacksTableBody.innerHTML = '';
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('feedbacks-screen').style.display = 'block';
+}
 
-      // Adicionar feedbacks na tabela
-      feedbacks.forEach(feedback => {
-        const row = feedbacksTableBody.insertRow();
-        
-        // Formatar data para o padrão pt-BR
-        const data = new Date(feedback.dataexi); // Cria o objeto Date a partir do formato ISO
-        const dataFormatada = data.toLocaleDateString('pt-BR'); // Formata para dd/MM/yyyy
-        
-        // Inserir células na linha
-        row.insertCell(0).textContent = feedback.protocoloexi;
-        row.insertCell(1).textContent = dataFormatada;
-        row.insertCell(2).textContent = feedback.supervisorexi;
-        row.insertCell(3).textContent = feedback.colaboradorexi;
-        row.insertCell(4).textContent = feedback.concordaexi;
-      });
-    }
+    // Função para exibir feedbacks
+function exibirFeedbacks(feedbacks) {
+  const feedbacksTableBody = document.querySelector('#feedbackTable tbody');
+  feedbacksTableBody.innerHTML = ''; // Limpa dados anteriores
+
+  if (!feedbacks || feedbacks.length === 0) { // Verifica se feedbacks é null ou vazio
+    const row = feedbacksTableBody.insertRow();
+    row.insertCell(0).textContent = 'Nenhum feedback encontrado.';
+    return; // Retorna se não houver feedbacks
+  }
+
+  feedbacks.forEach(feedback => {
+    const row = feedbacksTableBody.insertRow();
+    row.insertCell(0).textContent = feedback.protocolo;
+
+    // Formata a data para exibição
+    const dataFormatada = new Date(feedback.data).toLocaleDateString('pt-BR') + ' ' + new Date(feedback.data).toLocaleTimeString('pt-BR');
+    row.insertCell(1).textContent = dataFormatada;
+
+    row.insertCell(2).textContent = feedback.nome;
+    row.insertCell(3).textContent = feedback.assunto;
+    row.insertCell(4).textContent = feedback.status;
+  });
+}
 
     // Função para filtrar a tabela por uma coluna específica
     function filtrarTabela() {
