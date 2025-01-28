@@ -770,20 +770,11 @@ function exibirFeedbacksExtrato(feedbacks) {
 
 
 
-
-
-
-
-
-    // Função para buscar o feedback e exibir o painel de conclusão
-function buscarFeedbackcolab() {
-
-
-
-
-
-
-function concluirFeedback15() {
+// Função para abrir o painel de concluir feedback
+//function concluirFeedback9() {
+//  document.getElementById('colaborador-screen').style.display = 'none'; // Esconde o painel do colaborador
+//  document.getElementById('concluirfeed-screen').style.display = 'block'; // Mostra o painel de concluir feedback
+//}
 
 
 
@@ -795,6 +786,7 @@ function mostrarPainel(painel) {
 
 
 }
+
 
 
 function preencherColaboradores(colaboradores) {
@@ -810,8 +802,181 @@ function preencherColaboradores(colaboradores) {
 }
 
 
+
+function buscarFeedbackcolab() {
+  const protocolo = document.getElementById("protocolo").value.trim(); // Remove espaços em branco
+  console.log("Buscando email para o protocolo:", protocolo); // Log do protocolo
+
+  // Verifica se o campo de protocolo não está vazio
+  if (!protocolo) {
+    alert("Por favor, insira um protocolo.");
+    return;
+  }
+
+  // Obtenha o email do colaborador a partir do elemento HTML
+  const emailColaborador = document.getElementById('colaboradorEmail').textContent;
+
+  // Chama a função do back-end para buscar o email associado ao protocolo
+  google.script.run.withSuccessHandler(function(response) {
+    console.log("Resposta do back-end:", response); // Log da resposta para depuração
+
+    if (response && response.sucesso) { // Verifica se a resposta é válida
+      const emailAssociado = response.email; // Email encontrado
+
+      // Compara os emails
+      if (emailAssociado === emailColaborador) {
+        alert("O email associado ao protocolo corresponde ao colaborador logado.");
+
+        // Agora busca os dados do feedback
+        google.script.run.withSuccessHandler(function(dadosFeedback) {
+          if (dadosFeedback && dadosFeedback.sucesso) {
+            // Preenche os dados no painel
+            document.getElementById("tituloProtocolo").innerHTML = "Protocolo: " + protocolo;
+
+            // Verifica se a data de lançamento está disponível antes de formatar
+            if (dadosFeedback.dataLancamento) {
+              document.getElementById("dataLancamento").innerHTML = new Date(dadosFeedback.dataLancamento).toLocaleDateString('pt-BR'); // Formata a data para exibição
+            } else {
+              document.getElementById("dataLancamento").innerHTML = "Data não disponível"; // Mensagem alternativa
+            }
+
+            document.getElementById("supervisor").innerHTML = dadosFeedback.supervisor || "Supervisor não disponível";
+            document.getElementById("assunto").innerHTML = dadosFeedback.assunto || "Assunto não disponível";
+            document.getElementById("textoFeedback").innerHTML = dadosFeedback.textoFeedback || "Texto de feedback não disponível";
+
+            // Preenche o campo de resposta com o texto da coluna M, se existir
+            const respostaFeedback = dadosFeedback.resposta || ""; // Supondo que a resposta esteja na coluna M
+            document.getElementById("resposta").value = respostaFeedback;
+
+            // Verifica o status e marca o botão de concordância
+            const status = dadosFeedback.status;
+            if (status === 'Sim') {
+              document.querySelector('input[name="concorda"][value="sim"]').checked = true;
+            } else if (status === 'Não') {
+              document.querySelector('input[name="concorda"][value="nao"]').checked = true;
+            } else {
+              document.querySelector('input[name="concorda"][value="Pendente"]').checked = true;
+            }
+
+            // Desabilita os rádios para evitar alterações
+            document.querySelector('input[name="concorda"][value="sim"]').disabled = true;
+            document.querySelector('input[name="concorda"][value="nao"]').disabled = true;
+            document.querySelector('input[name="concorda"][value="Pendente"]').disabled = true;
+
+            // Limpa o campo de resposta
+            document.getElementById("resposta").value = respostaFeedback; // Preenche o campo de resposta
+          } else {
+            alert(dadosFeedback.mensagem || "Erro ao buscar os dados do feedback.");
+          }
+        }).buscarDadosFeedbackPorProtocolo(protocolo); // Chama a função para buscar os dados do feedback
+      } else {
+        alert("O email associado ao protocolo não corresponde ao colaborador logado.");
+      }
+    } else {
+      alert(response.mensagem || "Erro ao buscar o email associado ao protocolo.");
+    }
+  }).buscarEmailPorProtocolo(protocolo, emailColaborador); // Chama a função para buscar o email associado ao protocolo
+}
+
+
+function concluirFeedback15() {
+  // Verifica se o radio "Pendente" está marcado
+  const radioPendente = document.querySelector('input[name="concorda"][value="Pendente"]');
+
+  // Se o status não for "Pendente", não permite a conclusão
+  if (!radioPendente.checked) {
+    alert("O feedback já foi concluído. Não é possível alterar.");
+    return;
+  }
+
+  // Exibe o modal de confirmação
+  document.getElementById("confirmModal").style.display = "block";
+
+  // Adiciona eventos aos botões do modal
+  document.getElementById("btnConcordo").onclick = function() {
+    processarConclusao("Sim");
+  };
+
+  document.getElementById("btnNaoConcordo").onclick = function() {
+    processarConclusao("Não");
+  };
+}
+
+function processarConclusao(status) {
+  // Obtém o protocolo e a resposta
+  const protocolo = document.getElementById("protocolo").value.trim();
+  const resposta = document.getElementById("resposta").value.trim();
+
+  // Chama a função do back-end para concluir o feedback
+  google.script.run.withSuccessHandler(function(response) {
+    if (response.sucesso) {
+      alert(response.mensagem); // Exibe mensagem de sucesso
+
+      // Desabilita os rádios para evitar alterações
+      document.querySelector('input[name="concorda"][value="sim"]').disabled = true;
+      document.querySelector('input[name="concorda"][value="nao"]').disabled = true;
+      document.querySelector('input[name="concorda"][value="Pendente"]').disabled = true;
+
+      // Marca o rádio correspondente ao status
+      if (status === "Sim") {
+        document.querySelector('input[name="concorda"][value="sim"]').checked = true;
+      } else {
+        document.querySelector('input[name="concorda"][value="nao"]').checked = true;
+      }
+
+      // Aqui você pode adicionar lógica para limpar os campos ou voltar ao painel
+    } else {
+      alert(response.mensagem || "Erro ao concluir o feedback.");
+    }
+  }).withFailureHandler(function(error) {
+    console.error("Erro ao concluir feedback:", error);
+    alert("Ocorreu um erro ao concluir o feedback. Tente novamente.");
+  }).concluirFeedback(protocolo, resposta, status); // Chama a função para concluir o feedback
+
+  // Oculta o modal após a seleção
+  document.getElementById("confirmModal").style.display = "none";
+}
+
+
+function esqueciMinhaSenha() {
+  document.getElementById("esqueciSenhaPanel").style.display = "block"; // Exibe o painel de "Esqueci a Senha"
+}
+
+
+function enviarSenha() {
+  const email = document.getElementById("emailEsqueci").value.trim();
+
+  if (!email) {
+    document.getElementById("mensagemEsqueciSenha").innerText = "Por favor, insira um email válido.";
+    return;
+  }
+
+  // Chama a função do back-end para enviar a senha
+  google.script.run.withSuccessHandler(function(response) {
+    if (response.sucesso) {
+      alert("A senha foi enviada para o seu email.");
+      voltarAoLogin(); // Volta ao painel de login após enviar a senha
+    } else {
+      document.getElementById("mensagemEsqueciSenha").innerText = response.mensagem || "Erro ao enviar a senha.";
+    }
+  }).withFailureHandler(function(error) {
+    console.error("Erro ao enviar a senha:", error);
+    document.getElementById("mensagemEsqueciSenha").innerText = "Ocorreu um erro ao enviar a senha. Tente novamente.";
+  }).enviarSenhaPorEmail(email); // Chama a função do back-end
+}
+
+
+
+function voltarAoLogin() {
+  document.getElementById("esqueciSenhaPanel").style.display = "none"; // Esconde o painel de "Esqueci a Senha"
+  // Aqui você pode adicionar lógica para mostrar o painel de login novamente
+}
+
+
+
   </script>
 
+<!-- Painel de concluir Feedback colaborador -->
 <!-- Painel de concluir Feedback colaborador -->
 <div id="concluirfeed-screen" class="admin-container" style="display: none;">
   <h1>Conclusão de Feedback</h1>
@@ -827,11 +992,21 @@ function preencherColaboradores(colaboradores) {
   <p>Concorda com o feedback?</p>
   <label><input type="radio" name="concorda" value="sim"> Sim</label>
   <label><input type="radio" name="concorda" value="nao"> Não</label>
+  <label><input type="radio" name="concorda" value="Pendente"> Pendente</label>  
   <br>
   <label for="resposta">Resposta:</label>
   <textarea id="resposta"></textarea>
   <br>
   <button onclick="concluirFeedback15()">Concluir</button>
+
+  <!-- Modal de Confirmação -->
+  <div id="confirmModal" style="display:none;">
+    <div>
+      <p>Você concorda com o feedback?</p>
+      <button id="btnConcordo">Concordo</button>
+      <button id="btnNaoConcordo">Não concordo</button>
+    </div>
+  </div>
 </div>
 
 <!-- Painel de Extrato de Feedback -->
@@ -855,5 +1030,19 @@ function preencherColaboradores(colaboradores) {
     </tbody>
   </table>
 </div>
+
+
+<div id="esqueciSenhaPanel" style="display:none;">
+  <h2>Esqueci a Senha</h2>
+  <label for="emailEsqueci">Digite seu email:</label>
+  <input type="email" id="emailEsqueci" required>
+  <button onclick="enviarSenha()">Enviar</button>
+  <button onclick="voltarAoLogin()">Voltar</button>
+  <p id="mensagemEsqueciSenha" style="color: red;"></p>
+</div>
+
+
+
+
 </body>
 </html>
