@@ -29,7 +29,7 @@ function validarLogin(email, senha) {
     if (emailUsuario === email && senhaUsuario === senha) {
       // Chama setUsuarioLogado para definir as variáveis globais corretamente
       setUsuarioLogado(nome, email, categoria);
-      Logger.log("Usuário logado: " + nome + ", Email: " + emailUsuario); // Log do usuário logado
+      Logger.log("Usuário logado: " + nome + ", Email: " + emailUsuario + ", Categoria: " + categoria); // Log do usuário logado
       return { sucesso: true, categoria, nome, email: emailUsuario }; // Retorna o nome e email do usuário
     }
   }
@@ -57,6 +57,8 @@ function getUsuarioLogadoAdm() {
   return usuarioLogadoAdm; // Retorna as informações do usuário ADM logado
 }
 
+// Função para obter os dados do usuário logado
+// Função para obter os dados do usuário logado
 // Função para obter os dados do usuário logado
 function getUsuarioLogadoColab() {
   Logger.log(usuarioLogadoColab); // Adicione este log
@@ -127,7 +129,7 @@ function inserirFeedback2(dados) {
   const aba = planilha.getSheetByName('dados_feed');
   
   const dataAtual = new Date();
-  const protocolo = `${usuarioLogadoAdm.email.substring(0, 3).toUpperCase()}${dataAtual.getFullYear()}${(dataAtual.getMonth() + 1).toString().padStart(2, '0')}${dataAtual.getDate().toString().padStart(2, '0')}${dataAtual.getHours().toString().padStart(2, '0')}${dataAtual.getMinutes().toString().padStart(2, '0')}${dados.nomeColaborador.substring(0, 3).toUpperCase()}`;
+  const protocolo = `${dados.emailAdm.substring(0, 3).toUpperCase()}${dataAtual.getFullYear()}${(dataAtual.getMonth() + 1).toString().padStart(2, '0')}${dataAtual.getDate().toString().padStart(2, '0')}${dataAtual.getHours().toString().padStart(2, '0')}${dataAtual.getMinutes().toString().padStart(2, '0')}${dados.nomeColaborador.substring(0, 3).toUpperCase()}`;
 
   // Aqui você deve buscar o email do colaborador com base no nome
   const emailColaborador = buscarEmailColaborador(dados.nomeColaborador); // Função que você deve implementar
@@ -138,14 +140,15 @@ function inserirFeedback2(dados) {
     dataAtual.getDate(), 
     dataAtual.getMonth() + 1, 
     dataAtual.getFullYear(), 
-    usuarioLogadoAdm.nome, // Use o nome do ADM
-    usuarioLogadoAdm.email, // Use o email do ADM
+    dados.nomeAdm, // Use o nome do ADM passado do front-end
+    dados.emailAdm, // Use o email do ADM passado do front-end
     dados.nomeColaborador, 
     emailColaborador, // Email do colaborador buscado
     dados.assuntoFeed, 
     dados.textoFeed, 
     "Pendente"
   ]);
+  
   return { sucesso: true, mensagem: 'Feedback inserido com sucesso!' };
 }
 
@@ -185,8 +188,8 @@ function buscarFeedbacksDaPlanilha() {
       protocolo: dados[i][0],
       data: data.toISOString(), // Armazena a data no formato ISO
       nome: dados[i][5],
-      assunto: dados[i][9],
-      texto: dados[i][10],
+      assunto: dados[i][7],
+      texto: dados[i][8],
       status: dados[i][11]
     });
   }
@@ -195,39 +198,34 @@ function buscarFeedbacksDaPlanilha() {
   return feedbacks;
 }
 
+
+
+
+
 // Função para exibir o extrato de feedbacks do colaborador logado
 // Função para exibir o extrato de feedbacks do colaborador logado
-function extratoFeedbackcolab() {
+function extratoFeedbackcolab(email) {
   const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
   const aba = planilha.getSheetByName('dados_feed');
   const dados = aba.getDataRange().getValues();
   const extrato = [];
 
+  Logger.log("Email do colaborador logado: " + email); // Log do email
+
   for (let i = 1; i < dados.length; i++) {
-    if (dados[i][6] === usuarioLogadoColab.email) { // Filtra apenas os feedbacks do colaborador logado
+    Logger.log("Verificando feedback: " + dados[i][8]); // Log do email na planilha
+    if (dados[i][8] === email) { // Filtra apenas os feedbacks do colaborador logado
+      const dataFeedback = new Date(dados[i][1]); // Supondo que a data esteja na coluna 1
       extrato.push({
         protocolo: dados[i][0],
-        data: dados[i][1],
-        assunto: dados[i][9],
+        data: dataFeedback.toISOString(), // Armazena a data no formato ISO
+        supervisor: dados[i][5],          
+        assunto: dados[i][9],   
         status: dados[i][11]
       });
     }
   }
-  return extrato;
+  Logger.log("Extrato de feedbacks: " + JSON.stringify(extrato)); // Log do extrato
+  return extrato; // Retorna o extrato, que pode ser um array vazio
 }
 
-// Função para concluir um feedback
-function concluirFeedback(protocolo) {
-  const planilha = SpreadsheetApp.openById('1wEOGRGPWcdlY4_hrUbANTw48S3juVeYtlALP5BIgoq8');
-  const aba = planilha.getSheetByName('dados_feed');
-  const dados = aba.getDataRange().getValues();
-
-  for (let i = 1; i < dados.length; i++) {
-    if (dados[i][0] === protocolo && dados[i][6] === usuarioLogadoColab.email) {
-      dados[i][11] = 'Concluído'; // Atualiza o status para 'Concluído'
-      aba.getRange(i + 1, 12).setValue('Concluído'); // Atualiza a planilha
-      return { sucesso: true, mensagem: 'Feedback concluído com sucesso!' };
-    }
-  }
-  return { sucesso: false, mensagem: 'Feedback não encontrado ou não pertence ao colaborador.' };
-}
