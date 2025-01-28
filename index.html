@@ -509,7 +509,7 @@ function exibirFeedbacks(feedbacks) {
     // Função para obter os dados do usuário logado e exibir na interface
  // Função para obter os dados do usuário logado e exibir na interface
 function carregarUsuarioLogado() {
-  google.script.run.withSuccessHandler(exibirUsuarioLogado).getUsuarioLogado();
+  google.script.run.withSuccessHandler(exibirUsuarioLogado).getUsuarioLogadoColab();
 }
 
 // Função para exibir os dados do usuário logado
@@ -520,12 +520,14 @@ function exibirUsuarioLogado(usuario) {
     document.getElementById('userEmailText').textContent = usuario.email;
     
     // Exibir informações do colaborador
-    document.getElementById('colaboradorNome').textContent = usuario.nome;
-    document.getElementById('colaboradorEmail').textContent = usuario.email;
+    //document.getElementById('colaboradorNome').textContent = usuario.nome;
+    //document.getElementById('colaboradorEmail').textContent = usuario.email;
   } else {
     console.error("Usuário não encontrado.");
   }
 }
+
+
 
 function fazerLogin() {
   const email = document.getElementById('email').value.trim();
@@ -543,9 +545,6 @@ function fazerLogin() {
         var nome = resposta.nome;
         var email = resposta.email;
 
-        // Chama a função para definir o usuário logado na planilha
-        google.script.run.setUsuarioLogado(nome, email, categoria); // Passa a categoria
-
         // Atualiza o nome e o e-mail do usuário na interface
         document.getElementById('userName').innerText = nome;
         document.getElementById('userEmailText').innerText = email;
@@ -556,7 +555,10 @@ function fazerLogin() {
           document.getElementById('admin-screen').style.display = 'block';
         } else if (categoria === 'colaborador') {
           document.getElementById('colaborador-screen').style.display = 'block';
-          carregarUsuarioLogado(); // Chama a função para carregar os dados do colaborador
+
+          // Atualiza o email do colaborador no HTML
+          document.getElementById('colaboradorNome').textContent = nome; // Atualiza o nome do colaborador
+          document.getElementById('colaboradorEmail').textContent = email; // Atualiza o email do colaborador
         }
       } else {
         document.getElementById('error-message').innerText = resposta.mensagem;
@@ -564,7 +566,6 @@ function fazerLogin() {
     })
     .validarLogin(email, senha);
 }
-
 
 
 
@@ -633,10 +634,13 @@ function fazerLogin() {
     }
 
     // Função para exibir o painel de Inserir Feedback
-    function inserirFeedback() {
-      document.getElementById('admin-screen').style.display = 'none';
-      document.getElementById('inserir-feedback').style.display = 'block';
-    }
+function inserirFeedback() {
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('inserir-feedback').style.display = 'block';
+
+  // Chama a função para buscar colaboradores e preencher o select
+  google.script.run.withSuccessHandler(preencherColaboradores).carregarColaboradores();
+}
 
     // Função para voltar ao painel ADM
     function voltarAoPainel2() {
@@ -685,20 +689,33 @@ function fazerLogin() {
       document.getElementById('texto_feed').value = ''; 
     }
 
-    // Função para carregar o extrato de feedbacks
-    function carregarExtratoFeedback() {
-      google.script.run.withSuccessHandler(function(feedbacks) {
-        const tabela = document.getElementById("feedbacksTable");
-        tabela.innerHTML = ''; // Limpar tabela antes de adicionar novos dados
-        feedbacks.forEach(function(feedback) {
-          const linha = tabela.insertRow();
-          linha.insertCell(0).innerHTML = feedback.protocolo;
-          linha.insertCell(1).innerHTML = feedback.dataLancamento;
-          linha.insertCell(2).innerHTML = feedback.supervisor;
-          linha.insertCell(3).innerHTML = feedback.status;
-        });
-      }).extratoFeedbackcolab();
+// Função para carregar o extrato de feedbacks
+// Função para carregar o extrato de feedbacks
+function carregarExtratoFeedback() {
+  google.script.run.withSuccessHandler(function(feedbacks) {
+    const tabela = document.getElementById("feedbacksTable");
+    const tbody = tabela.getElementsByTagName('tbody')[0]; // Obtém o corpo da tabela
+    tbody.innerHTML = ''; // Limpar apenas o corpo da tabela antes de adicionar novos dados
+
+    // Verifica se feedbacks é um array e não está vazio
+    if (Array.isArray(feedbacks) && feedbacks.length > 0) {
+      feedbacks.forEach(function(feedback) {
+        const linha = tbody.insertRow(); // Insere a nova linha no corpo da tabela
+        linha.insertCell(0).innerHTML = feedback.protocolo;
+        linha.insertCell(1).innerHTML = feedback.data; // Certifique-se de que a data está formatada corretamente
+        linha.insertCell(2).innerHTML = feedback.supervisor;
+        linha.insertCell(3).innerHTML = feedback.assunto;
+        linha.insertCell(4).innerHTML = feedback.status;          
+      });
+    } else {
+      // Se não houver feedbacks, você pode adicionar uma linha informativa
+      const linha = tbody.insertRow();
+      const celula = linha.insertCell(0);
+      celula.colSpan = 5; // Faz a célula ocupar todas as colunas
+      celula.innerHTML = "Nenhum feedback encontrado."; // Mensagem informativa
     }
+  }).extratoFeedbackcolab();
+}
 
     // Painel de concluir Feedback colaborador
 // Função para abrir o painel de extrato de feedback
@@ -706,8 +723,11 @@ function extratoFeedbackcolab() {
   document.getElementById('colaborador-screen').style.display = 'none'; // Esconde o painel do colaborador
   document.getElementById('extratofeedcolab-screen').style.display = 'block'; // Mostra o painel de extrato de feedback
 
+  // Obtenha o email do colaborador a partir do elemento HTML
+  const emailColaborador = document.getElementById('colaboradorEmail').textContent;
+
   // Carregar feedbacks do colaborador logado
-  google.script.run.withSuccessHandler(exibirFeedbacksExtrato).extratoFeedbackcolab();
+  google.script.run.withSuccessHandler(exibirFeedbacksExtrato).extratoFeedbackcolab(emailColaborador);
 }
 
 // Função para exibir os feedbacks no painel de extrato
@@ -718,9 +738,14 @@ function exibirFeedbacksExtrato(feedbacks) {
   feedbacks.forEach(function(feedback) {
     const linha = tabela.insertRow();
     linha.insertCell(0).innerHTML = feedback.protocolo; // Protocolo
-    linha.insertCell(1).innerHTML = feedback.dataLancamento; // Data de Lançamento
+
+    // Formata a data para exibição
+    const dataFormatada = new Date(feedback.data).toLocaleDateString('pt-BR'); // Formata a data no formato 'dd/mm/yyyy'
+    linha.insertCell(1).innerHTML = dataFormatada; // Data de Lançamento
+
     linha.insertCell(2).innerHTML = feedback.supervisor; // Supervisor
-    linha.insertCell(3).innerHTML = feedback.status; // Status
+    linha.insertCell(3).innerHTML = feedback.assunto; // Assunto
+    linha.insertCell(4).innerHTML = feedback.status; // Status
   });
 }
 
@@ -742,28 +767,23 @@ function exibirFeedbacksExtrato(feedbacks) {
       document.getElementById('colaborador-screen').style.display = 'block';
     }
 
+
+
+
+
+
+
+
+
     // Função para buscar o feedback e exibir o painel de conclusão
 function buscarFeedbackcolab() {
-  const protocolo = document.getElementById("protocolo").value;
-  console.log("Buscando feedback para o protocolo:", protocolo); // Log do protocolo
-  google.script.run.withSuccessHandler(function(response) {
-    if (response.sucesso) {
-      document.getElementById("feedbackDetalhes").style.display = 'block';
-      document.getElementById("tituloProtocolo").innerHTML = "Protocolo: " + protocolo;
-      document.getElementById("dataLancamento").innerHTML = response.dataLancamento;
-      document.getElementById("supervisor").innerHTML = response.supervisor;
-      document.getElementById("textoFeedback").innerHTML = response.textoFeedback;
-    } else {
-      alert(response.mensagem);
-    }
-  }).concluirFeedback(protocolo, "", "");
-}
 
-// Função para abrir o painel de concluir feedback
-function concluirFeedback() {
-  document.getElementById('colaborador-screen').style.display = 'none'; // Esconde o painel do colaborador
-  document.getElementById('concluirfeed-screen').style.display = 'block'; // Mostra o painel de concluir feedback
-}
+
+
+
+
+
+function concluirFeedback15() {
 
 
 
@@ -773,11 +793,8 @@ function mostrarPainel(painel) {
   document.getElementById('colab-panel').style.display = 'none';
   document.getElementById(painel).style.display = 'block';
 
-  if (painel === 'admin-panel') {
-    google.script.run.withSuccessHandler(preencherColaboradores).buscarColaboradores();
-  }
-}
 
+}
 
 
 function preencherColaboradores(colaboradores) {
@@ -793,32 +810,28 @@ function preencherColaboradores(colaboradores) {
 }
 
 
-
-
   </script>
 
-  <!-- Painel de concluir Feedback colaborador -->
+<!-- Painel de concluir Feedback colaborador -->
 <div id="concluirfeed-screen" class="admin-container" style="display: none;">
   <h1>Conclusão de Feedback</h1>
   <label for="protocolo">Protocolo:</label>
   <input type="text" id="protocolo">
-  <button onclick="buscarFeedbackcolab()">Buscar</button>
+  <button onclick="buscarFeedbackcolab()">Buscar</button> <!-- Chama a função correta -->
   <button onclick="voltarAoPainel7()">Voltar</button>
-
-  <div id="feedbackDetalhes" style="display:none;">
-    <h2 id="tituloProtocolo"></h2>
-    <p>Data de Lançamento: <span id="dataLancamento"></span></p>
-    <p>Supervisor: <span id="supervisor"></span></p>
-    <p>Texto do Feedback: <span id="textoFeedback"></span></p>
-    <p>Concorda com o feedback?</p>
-    <label><input type="radio" name="concorda" value="sim"> Sim</label>
-    <label><input type="radio" name="concorda" value="nao"> Não</label>
-    <br>
-    <label for="resposta">Resposta:</label>
-    <textarea id="resposta"></textarea>
-    <br>
-    <button onclick="concluirFeedback()">Concluir Feedback</button>
-  </div>
+  <h2 id="tituloProtocolo"></h2>
+  <p>Data de Lançamento: <span id="dataLancamento"></span></p>
+  <p>Supervisor: <span id="supervisor"></span></p>
+  <p>Assunto: <span id="assunto"></span></p>
+  <p>Texto do Feedback: <span id="textoFeedback"></span></p>
+  <p>Concorda com o feedback?</p>
+  <label><input type="radio" name="concorda" value="sim"> Sim</label>
+  <label><input type="radio" name="concorda" value="nao"> Não</label>
+  <br>
+  <label for="resposta">Resposta:</label>
+  <textarea id="resposta"></textarea>
+  <br>
+  <button onclick="concluirFeedback15()">Concluir</button>
 </div>
 
 <!-- Painel de Extrato de Feedback -->
@@ -826,15 +839,20 @@ function preencherColaboradores(colaboradores) {
   <h1>Extrato de Feedback</h1>
   <br>
   <button onclick="voltarAoPainel8()">Voltar</button> 
-  <button onclick="carregarExtratoFeedback()">Gerar extrato</button> 
   <br><br>
   <table id="feedbacksTable" border="1">
-    <tr>
-      <th>Protocolo</th>
-      <th>Data de Lançamento</th>
-      <th>Supervisor</th>
-      <th>Status</th>
-    </tr>
+    <thead>
+      <tr>
+        <th>Protocolo</th>
+        <th>Data de Lançamento</th>
+        <th>Supervisor</th>
+        <th>Assunto</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Os dados da tabela serão preenchidos via JavaScript -->
+    </tbody>
   </table>
 </div>
 </body>
